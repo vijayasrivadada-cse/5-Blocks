@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Blockchain Demo</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <!-- ✅ For live hashing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+
+<body>
+
+<h1>⛓️ Blockchain Demo (Python)</h1>
+
+<div class="blockchain-container">
+
+{% for block in chain %}
+<div class="block">
+
+    <h3>Block {{ block.index }}</h3>
+
+    <p><strong>Timestamp:</strong> {{ block.timestamp }}</p>
+
+    <p><strong>Data:</strong>
+        <input type="text" value="{{ block.data }}" 
+               oninput="liveUpdate({{ loop.index0 }})">
+    </p>
+
+    <p><strong>Nonce:</strong> 
+        <span id="nonce-{{ loop.index0 }}">{{ block.nonce }}</span>
+    </p>
+
+    <p><strong>Previous Hash:</strong> 
+        <span id="prev-{{ loop.index0 }}">{{ block.previous_hash }}</span>
+    </p>
+
+    <p><strong>Hash:</strong>
+        <span id="hash-{{ loop.index0 }}">{{ block.hash }}</span>
+    </p>
+
+    <button onclick="mine({{ loop.index0 }})">Mine</button>
+
+</div>
+{% endfor %}
+
+</div>
+
+<script>
+
+// ✅ LIVE HASH UPDATE (while typing)
+function liveUpdate(index) {
+
+    const blocks = document.getElementsByClassName("block");
+
+    for (let i = index; i < blocks.length; i++) {
+
+        const data = blocks[i].querySelector("input").value;
+        const prevHash = i === 0 ? "0" : document.getElementById("hash-" + (i-1)).innerText;
+        const nonce = document.getElementById("nonce-" + i).innerText;
+
+        const text = i + prevHash + data + nonce;
+
+        const hash = CryptoJS.SHA256(text).toString();
+
+        document.getElementById("hash-" + i).innerText = hash;
+        document.getElementById("prev-" + i).innerText = prevHash;
+    }
+}
+
+// ✅ MINE BUTTON
+async function mine(index) {
+
+    const res = await fetch("/mine/" + index);
+    const data = await res.json();
+
+    document.getElementById("hash-" + index).innerText = data.hash;
+    document.getElementById("nonce-" + index).innerText = data.nonce;
+
+    liveUpdate(index); // update next blocks
+}
+
+</script>
+
+</body>
+</html>
